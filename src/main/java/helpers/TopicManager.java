@@ -9,11 +9,14 @@ import java.util.List;
 import java.util.Properties;
 
 public class TopicManager {
-    public static void main(String[] args) {
+    private static Properties getAdminProps() {
         Properties props = new Properties();
         props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        return props;
+    }
 
-        try (AdminClient adminClient = AdminClient.create(props)) {
+    public static void createTopics() {
+        try (AdminClient adminClient = AdminClient.create(getAdminProps())) {
 
             List<NewTopic> newTopics = Arrays.asList(
                     new NewTopic("transactions", 1, (short) 1),
@@ -26,6 +29,16 @@ public class TopicManager {
             System.out.println("Успех! Топики созданы: transactions, orders, payments, user-actions");
         } catch (Exception e) {
             System.out.println("Возможно, топики уже созданы или сервер не запущен.");
+            e.printStackTrace();
+        }
+    }
+
+    public static void deleteTopics(List<String> topics) {
+        try (AdminClient adminClient = AdminClient.create(getAdminProps())) {
+            adminClient.deleteTopics(topics).all().get();
+            System.out.println("Топики успешно удалены: " + topics);
+        } catch (Exception e) {
+            System.out.println("Ошибка при удалении топиков. Возможно, они не существуют.");
             e.printStackTrace();
         }
     }

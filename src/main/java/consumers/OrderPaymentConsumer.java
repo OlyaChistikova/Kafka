@@ -5,14 +5,22 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class OrderPaymentConsumer {
-    public static void main(String[] args) {
+    public final List<String> buffer = new CopyOnWriteArrayList<>();
+    public volatile boolean keepRunning = true;
+
+    public void getMessage() {
         var consumer = new KafkaConsumer<String, String>(AppConfig.getConsumerProps("combined-group"));
         consumer.subscribe(List.of("orders", "payments")); // Подписка на два топика
-        while (true) {
+        while (keepRunning) {
             var records = consumer.poll(Duration.ofMillis(500));
-            records.forEach(r -> System.out.printf("Topic: %s | Data: %s%n", r.topic(), r.value()));
+            records.forEach(r -> {
+                String msg = String.format("Topic: %s | Data: %s", r.topic(), r.value());
+                buffer.add(msg);
+                System.out.println(msg);
+            });
         }
     }
 }

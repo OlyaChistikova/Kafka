@@ -5,13 +5,18 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class UserActionConsumerB {
-    public static void main(String[] args) {
+    public final List<String> buffer = new CopyOnWriteArrayList<>();
+    public volatile boolean keepRunning = true;
+
+    public void getMessage() {
         var consumer = new KafkaConsumer<String, String>(AppConfig.getConsumerProps("groupB"));
         consumer.subscribe(List.of("user-actions"));
-        while (true) {
-            consumer.poll(Duration.ofMillis(500)).forEach(r -> System.out.println("Group B received: " + r.value()));
+        while (keepRunning) {
+            consumer.poll(Duration.ofMillis(500)).forEach(r -> buffer.add(r.value()));
         }
+        consumer.close();
     }
 }
